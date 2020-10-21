@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="84f24722-1eeb-4dea-b58a-f3026c5c5c39" name="mininet">
+        <fileTransfer rootFolder="/home/mininet/cs144_lab3/router" accessType="SFTP" host="localhost" port="2288" sshConfigId="7211d10c-ba05-4243-aad2-fcb8b54a8f7d" sshConfig="mininet@localhost:2288 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
