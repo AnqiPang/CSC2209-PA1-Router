@@ -28,12 +28,12 @@
  * */
 void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *arpreq) {
     /* get current time*/
-    /*time_t current_time;
-    time(&current_time);*/
-    time_t now = time(NULL);
-    pthread_mutex_lock(&sr->cache.lock);
+    time_t current_time;
+    time(&current_time);
+   /* time_t now = time(NULL);
+    pthread_mutex_lock(&sr->cache.lock);*/
     /* check the difference time between current time and request sent time */
-    if(difftime(now, arpreq->sent) > 1.0) {
+    if(difftime(current_time, arpreq->sent) > 1.0) {
         if(arpreq->times_sent >= 5){
             /* get all the packets waiting for this arp request */
             struct sr_packet *waiting_packet = arpreq->packets;
@@ -96,12 +96,14 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *arpreq) {
             /* update the arp request */
             arpreq->sent = time(NULL);
             arpreq->times_sent ++;
-            /*arpreq->sent = current_time;*/
+            arpreq->sent = current_time;
 
 
         }
     }
+/*
     pthread_mutex_unlock(&sr->cache.lock);
+*/
 }
 
 /* Custom method: check arp cache and the packet

@@ -407,8 +407,8 @@ void send_icmp_type_three_msg(struct sr_instance *sr, uint8_t *packet, unsigned 
     /* Get the new packet ip header */
     sr_ip_hdr_t *new_ip_hdr = (sr_ip_hdr_t *)(new_packet + sizeof(sr_ethernet_hdr_t));
     /* get the new packet icmp header */
-    /*sr_icmp_t3_hdr_t *new_icmp_hdr = (sr_icmp_t3_hdr_t *)(new_packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));*/
-    sr_icmp_t3_hdr_t *new_icmp_hdr = (sr_icmp_t3_hdr_t *)(new_packet + sizeof(sr_ethernet_hdr_t) + (ip_hdr->ip_hl * 4));
+    sr_icmp_t3_hdr_t *new_icmp_hdr = (sr_icmp_t3_hdr_t *)(new_packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+    /*sr_icmp_t3_hdr_t *new_icmp_hdr = (sr_icmp_t3_hdr_t *)(new_packet + sizeof(sr_ethernet_hdr_t) + (ip_hdr->ip_hl * 4));*/
     /* set the new ethernet header */
     memcpy(new_eth_hdr->ether_dhost, ethernet_hdr->ether_shost, ETHER_ADDR_LEN);
     memcpy(new_eth_hdr->ether_shost, out_interface->addr, ETHER_ADDR_LEN);
@@ -419,8 +419,8 @@ void send_icmp_type_three_msg(struct sr_instance *sr, uint8_t *packet, unsigned 
     /* Set the new ip header */
     /*new_ip_hdr->ip_hl = 5;*/
     new_ip_hdr->ip_v = 4;
-    /*new_ip_hdr->ip_hl = ip_hdr->ip_hl;*/
-    new_ip_hdr->ip_hl = sizeof(sr_ip_hdr_t)/4;
+    new_ip_hdr->ip_hl = ip_hdr->ip_hl;
+    /*new_ip_hdr->ip_hl = sizeof(sr_ip_hdr_t)/4;*/
     /*new_ip_hdr->ip_v = ip_hdr->ip_v;*/
     new_ip_hdr->ip_tos = 0;
     new_ip_hdr->ip_len = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
