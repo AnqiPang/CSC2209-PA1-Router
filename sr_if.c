@@ -217,8 +217,6 @@ struct sr_if* sr_get_if_with_ip(struct sr_instance* sr, uint32_t ip) {
 
     while(if_walker)
     {
-        printf("if walker ip\n");
-        print_addr_ip_int(if_walker->ip);
         if(if_walker->ip == ip){
             printf("Find the interface with ip %s\n", if_walker->name);
             return if_walker;

@@ -31,16 +31,17 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *arpreq) {
     /*time_t current_time;
     time(&current_time);*/
     time_t now = time(NULL);
-    pthread_mutex_lock(&sr->cache.lock);
+    struct sr_arpcache *cache = &sr->cache;
+    pthread_mutex_lock(&(cache->lock));
     /* check the difference time between current time and request sent time */
     if(difftime(now, arpreq->sent) > 1.0) {
         if(arpreq->times_sent >= 5){
             /* get all the packets waiting for this arp request */
             struct sr_packet *waiting_packet = arpreq->packets;
-            /*  send icmp host unreachable to source addr of all pkts waiting */
+            /*  send icmp host unreachable to source addr of all packets waiting */
             while (waiting_packet){
-                printf("send icmp msg: host unrechable");
-                send_icmp_type_three_msg(sr,waiting_packet->buf,waiting_packet->len,3,(uint8_t)1);
+                printf("send icmp msg: host unrechable\n");
+                send_icmp_type_three_msg(sr,waiting_packet->buf,waiting_packet->len,3,1);
                 waiting_packet = waiting_packet->next;
 
             }
@@ -66,21 +67,21 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *arpreq) {
 
             /* create the ARP header */
             sr_arp_hdr_t *new_arp_hdr = (sr_arp_hdr_t *)(new_arp_packet + sizeof(sr_ethernet_hdr_t));
-            new_arp_hdr->ar_hrd =  (unsigned short)htons(arp_hrd_ethernet);
-            new_arp_hdr->ar_pro = (unsigned short)htons(ethertype_ip);
-            new_arp_hdr->ar_hln = (unsigned char )ETHER_ADDR_LEN;
+            new_arp_hdr->ar_hrd = htons(arp_hrd_ethernet);
+            new_arp_hdr->ar_pro = htons(ethertype_ip);
+            new_arp_hdr->ar_hln = (unsigned char)ETHER_ADDR_LEN;
             new_arp_hdr->ar_pln = (unsigned char)sizeof(uint32_t);
             /*new_arp_hdr->ar_hln = 6;
             new_arp_hdr->ar_pln = 4;*/
-            new_arp_hdr->ar_op = (unsigned short)htons(arp_op_request);
+            new_arp_hdr->ar_op = htons(arp_op_request);
             memcpy(new_arp_hdr->ar_sha, src_interface->addr, ETHER_ADDR_LEN);
             /* the target mac address is 00:00:00:00 */
             memset(new_arp_hdr->ar_tha, 0x00, ETHER_ADDR_LEN);
             new_arp_hdr->ar_sip = src_interface->ip;
             new_arp_hdr->ar_tip = arpreq->ip;
 
-            printf("handle_arpreq: Created the ARP request packet\n");
-            print_hdrs(new_arp_packet,sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t));
+           /* printf("handle_arpreq: Created the ARP request packet\n");
+            print_hdrs(new_arp_packet,sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t));*/
 
             /* send the arp request packet */
             unsigned int arp_len = sizeof(sr_ethernet_hdr_t)+sizeof(sr_arp_hdr_t);
@@ -92,7 +93,6 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *arpreq) {
             free(new_arp_packet);
 
             /* update the arp request */
-            printf("Crash in handle_arpreq;\n");
             arpreq->sent = time(NULL);
             arpreq->times_sent ++;
             /*arpreq->sent = current_time;*/
@@ -100,7 +100,7 @@ void handle_arpreq(struct sr_instance *sr, struct sr_arpreq *arpreq) {
 
         }
     }
-    pthread_mutex_unlock(&sr->cache.lock);
+    pthread_mutex_unlock(&(cache->lock));
 }
 
 /* Custom method: check arp cache and the packet
@@ -125,25 +125,19 @@ void checkCacheAndSendPacket(struct sr_instance* sr /* borrowed */,
     /* Look up the arp cache to find the entry with matched ip */
     struct sr_arpentry* entry = sr_arpcache_lookup(&sr->cache, ip);
     if(entry){
-        printf("Find the entry in arp cahche.\n");
+        printf("Find the entry in arp cache. Use the ARP cache to set the new packet Ethernet header.\n");
         sr_ethernet_hdr_t *ethernet_hdr_addr = (sr_ethernet_hdr_t *)packet;
         memcpy(ethernet_hdr_addr->ether_dhost, entry->mac, ETHER_ADDR_LEN );
-
         /* get the source interface hardware address of the packet */
-        /*struct sr_if *src_interface = sr_get_interface(sr, iface);*/
-       /* memcpy(ethernet_hdr_addr->ether_shost, src_interface->addr, ETHER_ADDR_LEN );*/
         memcpy(ethernet_hdr_addr->ether_shost, interface->addr, ETHER_ADDR_LEN );
-        /*sr_send_packet(sr,packet,len,iface);*/
-        printf("THE packet to send when find arp cache:\n");
-        print_hdrs(packet,len);
+
+        /* Send the pakcet */
         sr_send_packet(sr,packet,len,interface->name);
-        printf("WHY CRASH????\n");
         free(entry);
-        printf("Can reach here?\n");
     } else {
         printf("Not found Entry. Add the arp request to the queue.\n");
-        printf("The cached packet.\n");
-        print_hdrs(packet,len);
+        /* printf("The cached packet.\n");
+        print_hdrs(packet,len);*/
         /*struct sr_arpreq *req = sr_arpcache_queuereq(&(sr->cache),ip,packet,len,iface);*/
         struct sr_arpreq *req = sr_arpcache_queuereq(&sr->cache,ip,packet,len,interface->name);
         handle_arpreq(sr,req);
